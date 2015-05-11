@@ -14,24 +14,28 @@
 break ON
 
 ;löscht bestehendes file
-DEL "..\DataLoLI\topsislist.txt"
+DEL "..\DataLoLi\topsislist.txt"
 
 ;liest alle vorhandenen *.topsis Dateien ein
-$TopsisFile = Dir ("..\DataLoLI\*.topsis")
+$TopsisFile = Dir ("..\DataLoLi\*.topsis")
 
 ;Diese Schleife wird für jedes gefundene *.topsis File ausgeführt
+If Open (4, "..\DataLoLi\topsislist.txt",5) = 0
+	WriteLine (4, ";Nome Computer;Marca;Seriale;Utente;CPU;RAM;S.O. version;Sistema Operativo;disco;Office;Data Inventario" + @CRLF )
+ENDIF
+Close (4)
 While $TopsisFile <> "" and @ERROR = 0
 
 	; Erkennt das Erstellungsdatum des *.topsis Files
-	$TopsisTime = SUBSTR(GetFileTime("..\DataLoLI\" + $TopsisFile), 12, 18)
-	$TopsisDate_uk = SUBSTR(GetFileTime("..\DataLoLI\" + $TopsisFile), 1, 10)
+	$TopsisTime = SUBSTR(GetFileTime("..\DataLoLi\" + $TopsisFile), 12, 18)
+	$TopsisDate_uk = SUBSTR(GetFileTime("..\DataLoLi\" + $TopsisFile), 1, 10)
 	$TOPsisDate = SUBSTR($TOPsisDate_uk, 9, 2) + "-" + SUBSTR($TOPsisDate_uk, 6, 2) + "-" + SUBSTR($TOPsisDate_uk, 1, 4)
 	$drive = "NO"
 
 	; Schneidet die Endung .topsis ab
 	$TopsisFile = SUBSTR($TopsisFile, 1, LEN($TopsisFile) - 7)
 
-		If Open (2, "..\DataLoLI\" + $TopsisFile + ".topsis",2) = 0
+		If Open (2, "..\DataLoLi\" + $TopsisFile + ".topsis",2) = 0
 
 		;Liest das File zeilenweise aus und vergleicht die Zeilen mit Suchwerten
 		While @ERROR = 0 & $stop <> "Stop"
@@ -111,7 +115,7 @@ While $TopsisFile <> "" and @ERROR = 0
 				if $drive = "NO"
 					$drive = RTRIM(SUBSTR($line, 29))
 				ELSE
-					$drive = $drive + ";" + RTRIM(SUBSTR($line, 29))
+					$drive = $drive + " - " + RTRIM(SUBSTR($line, 29))
 				ENDIF	
 			ENDIF
 			If INSTR($line, "  Disk type = ")
@@ -151,8 +155,8 @@ While $TopsisFile <> "" and @ERROR = 0
 		Close (2)
 
 		;Schreibt den Datensatz in das CSV-File
-		If Open (3, "..\DataLoLI\topsislist.txt",5) = 0
-			WriteLine (3, $TopsisFile + ";" + $BIOSMA + ";" + $BIOSSN + ";" + SUBSTR($TopsisFile,1,4) + ";" + $USER + ";" + $CPU + ";" + $RAM + ";" + $COMPUTERNAME + ";" + $WINVER + ";" + $WINNAME + ";" + $drive + ";" + $office + ";" + $TopsisDate + ";" + $TopsisTime + @CRLF )
+		If Open (3, "..\DataLoLi\topsislist.txt",5) = 0
+			WriteLine (3, $TopsisFile + ";" + $COMPUTERNAME + ";" + $BIOSMA + ";" + $BIOSSN + ";" + $USER + ";" + $CPU + ";" + $RAM + ";" + $WINVER + ";" + $WINNAME + ";" + $drive + ";" + $office + ";" + $TopsisDate + @CRLF )
 		
 		ENDIF
 		Close (3)

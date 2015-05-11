@@ -14,24 +14,24 @@
 break ON
 
 ;löscht bestehendes file
-DEL "Data\topsislist.txt"
+DEL "..\DataLoLI\topsislist.txt"
 
 ;liest alle vorhandenen *.topsis Dateien ein
-$TopsisFile = Dir ("Data\*.topsis")
+$TopsisFile = Dir ("..\DataLoLI\*.topsis")
 
 ;Diese Schleife wird für jedes gefundene *.topsis File ausgeführt
 While $TopsisFile <> "" and @ERROR = 0
 
 	; Erkennt das Erstellungsdatum des *.topsis Files
-	$TopsisTime = SUBSTR(GetFileTime("Data\" + $TopsisFile), 12, 18)
-	$TopsisDate_uk = SUBSTR(GetFileTime("Data\" + $TopsisFile), 1, 10)
+	$TopsisTime = SUBSTR(GetFileTime("..\DataLoLI\" + $TopsisFile), 12, 18)
+	$TopsisDate_uk = SUBSTR(GetFileTime("..\DataLoLI\" + $TopsisFile), 1, 10)
 	$TOPsisDate = SUBSTR($TOPsisDate_uk, 9, 2) + "-" + SUBSTR($TOPsisDate_uk, 6, 2) + "-" + SUBSTR($TOPsisDate_uk, 1, 4)
 	$drive = "NO"
 
 	; Schneidet die Endung .topsis ab
 	$TopsisFile = SUBSTR($TopsisFile, 1, LEN($TopsisFile) - 7)
 
-		If Open (2, "Data\" + $TopsisFile + ".topsis",2) = 0
+		If Open (2, "..\DataLoLI\" + $TopsisFile + ".topsis",2) = 0
 
 		;Liest das File zeilenweise aus und vergleicht die Zeilen mit Suchwerten
 		While @ERROR = 0 & $stop <> "Stop"
@@ -151,7 +151,7 @@ While $TopsisFile <> "" and @ERROR = 0
 		Close (2)
 
 		;Schreibt den Datensatz in das CSV-File
-		If Open (3, "Data\topsislist.txt",5) = 0
+		If Open (3, "..\DataLoLI\topsislist.txt",5) = 0
 			WriteLine (3, $TopsisFile + ";" + $BIOSMA + ";" + $BIOSSN + ";" + SUBSTR($TopsisFile,1,4) + ";" + $USER + ";" + $CPU + ";" + $RAM + ";" + $COMPUTERNAME + ";" + $WINVER + ";" + $WINNAME + ";" + $drive + ";" + $office + ";" + $TopsisDate + ";" + $TopsisTime + @CRLF )
 		
 		ENDIF

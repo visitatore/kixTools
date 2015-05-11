@@ -1,0 +1,164 @@
+;  topsislist.kix
+;  VERSION 1.1
+;
+;  Note :  Sucht nach neuen *.topsis Dateien und aktualisiert eine csv Datei
+;          Bitte keine Änderungen vornehmen
+;          Das generierte CSV-File ist genau für den IMPORT in Topdesk aufbereitet
+;          (OBJEKTID ; HOSTNAME ; ART ; HERSTELLER ; SERIENNUMMER ; DEBITORENNUMMER ; USER ; Scan-Datum ; Scan-Uhrzeit)
+;
+;   Copyright (C) 2005 Carsten Sauter.
+;   Carsten.Sauter@united-systems.de
+;   All rights reserved.
+;
+
+break ON
+
+;löscht bestehendes file
+DEL "Data\topsislist.txt"
+
+;liest alle vorhandenen *.topsis Dateien ein
+$TopsisFile = Dir ("Data\*.topsis")
+
+;Diese Schleife wird für jedes gefundene *.topsis File ausgeführt
+While $TopsisFile <> "" and @ERROR = 0
+
+	; Erkennt das Erstellungsdatum des *.topsis Files
+	$TopsisTime = SUBSTR(GetFileTime("Data\" + $TopsisFile), 12, 18)
+	$TopsisDate_uk = SUBSTR(GetFileTime("Data\" + $TopsisFile), 1, 10)
+	$TOPsisDate = SUBSTR($TOPsisDate_uk, 9, 2) + "-" + SUBSTR($TOPsisDate_uk, 6, 2) + "-" + SUBSTR($TOPsisDate_uk, 1, 4)
+	$drive = "NO"
+
+	; Schneidet die Endung .topsis ab
+	$TopsisFile = SUBSTR($TopsisFile, 1, LEN($TopsisFile) - 7)
+
+		If Open (2, "Data\" + $TopsisFile + ".topsis",2) = 0
+
+		;Liest das File zeilenweise aus und vergleicht die Zeilen mit Suchwerten
+		While @ERROR = 0 & $stop <> "Stop"
+			$line = UCASE(Readline(2))
+
+			If INSTR($line, "BIOS ID = ")
+				$BIOSM_ = RTRIM(SUBSTR($line, 10))
+				If INSTR($BIOSM_, "HP")
+					$BIOSMA = "HP"
+				ENDIF
+				If INSTR($BIOSM_, "COMPAQ")
+					$BIOSMA = "HP"
+				ENDIF
+				If INSTR($BIOSM_, "Sony")
+					$BIOSMA = "Sony"
+				ENDIF
+				If INSTR($BIOSM_, "TOSASU")
+					$BIOSMA = "Toshiba"
+				ENDIF
+			ENDIF
+
+			If INSTR($line, "BIOS MANUFACTURER = ")
+				$BIOSM_ = RTRIM(SUBSTR($line, 20))
+
+				;Filtern und Umsetzung nach bekannten Herstellern ==============================
+				If INSTR($BIOSM_, "HEWLETT")
+					$BIOSMA = "HP"
+				ENDIF
+				If INSTR($BIOSM_, "HP")
+					$BIOSMA = "HP"
+				ENDIF
+				If INSTR($BIOSM_, "DELL")
+					$BIOSMA = "DELL"
+				ENDIF
+				If INSTR($BIOSM_, "IBM")
+					$BIOSMA = "IBM"
+				ENDIF
+				If INSTR($BIOSM_, "COMPAQ")
+					$BIOSMA = "HP"
+				ENDIF
+				If INSTR($BIOSM_, "TOSHIBA")
+					$BIOSMA = "Toshiba"
+				ENDIF
+				If INSTR($BIOSM_, "AMERICAN MEGATRENDS") AND NOT $BIOSMA = "HP"
+					$BIOSMA = "American Megatrends"
+				ENDIF
+
+			ENDIF
+
+			If INSTR($line, "BIOS SERIALNUMBER = ")
+				$BIOSSN = RTRIM(SUBSTR($line, 21))
+			ENDIF
+
+			If INSTR($line, "ACER") AND NOT INSTR($line, "MONITOR")
+					$BIOSMA = "Acer"
+			ENDIF		
+			If INSTR($line, "Username = ")
+				$USER = RTRIM(SUBSTR($line, 12))
+
+			ENDIF
+			If INSTR($line, "CPU Family/Model/Stepping interpreted = ")
+				$CPU = RTRIM(SUBSTR($line, 41))
+			ENDIF
+			If INSTR($line, "Total Physical Memory = ")
+				$RAM = RTRIM(SUBSTR($line, 25))
+			ENDIF
+			If INSTR($line, "Computername = ")
+				$COMPUTERNAME = RTRIM(SUBSTR($line, 16))
+			ENDIF
+			If INSTR($line, "Windows Version = ")
+				$WINVER = RTRIM(SUBSTR($line, 19))
+			ENDIF
+			If INSTR($line, "Windows Name = ")
+				$WINNAME = RTRIM(SUBSTR($line, 16))
+			ENDIF
+			If INSTR($line, "Drive information for drive ")
+				if $drive = "NO"
+					$drive = RTRIM(SUBSTR($line, 29))
+				ELSE
+					$drive = $drive + ";" + RTRIM(SUBSTR($line, 29))
+				ENDIF	
+			ENDIF
+			If INSTR($line, "  Disk type = ")
+				$drive = $drive + " ,type: " + RTRIM(SUBSTR($line, 15))
+			ENDIF
+			If INSTR($line, "  Filesystem = ")
+				$drive = $drive + " ,Filesystem: " + RTRIM(SUBSTR($line, 16))
+			ENDIF
+			If INSTR($line, "  Free space = ")
+				$byte=cint(cdbl(RTRIM(SUBSTR($line, 16)))/1073741824)
+				$drive = $drive + " ,Free space: " + $byte + "GB"
+			ENDIF
+			If INSTR($line, "  Serialnumber = ")
+				$drive = $drive + " ,Serialnumber: " + RTRIM(SUBSTR($line, 18))
+			ENDIF
+			If INSTR($line, "  Totalspace = ")
+				$byte=cint(cdbl(RTRIM(SUBSTR($line, 16)))/1073741824)
+				$drive = $drive + " ,Totalspace: " + $byte + "GB"
+			ENDIF
+			If INSTR($line, " Office 15 ")
+				$office = "Office 2013"
+			ENDIF
+			If INSTR($line, "Microsoft Corporation, Microsoft Office ")
+				If INSTR(RTRIM(SUBSTR($line, 52)), "14.0.4763.1000")
+					$office = "Office 2010"
+				ENDIF
+				If INSTR(RTRIM(SUBSTR($line, 52)), "14.0.6029.1000")
+					$office = "Office 2010 SP1"
+				ENDIF
+				If INSTR(RTRIM(SUBSTR($line, 52)), "14.0.7015.1000")
+					$office = "Office 2010 SP2"
+				ENDIF
+			ENDIF
+		Loop
+		$Stop = ""
+		ENDIF
+		Close (2)
+
+		;Schreibt den Datensatz in das CSV-File
+		If Open (3, "Data\topsislist.txt",5) = 0
+			WriteLine (3, $TopsisFile + ";" + $BIOSMA + ";" + $BIOSSN + ";" + SUBSTR($TopsisFile,1,4) + ";" + $USER + ";" + $CPU + ";" + $RAM + ";" + $COMPUTERNAME + ";" + $WINVER + ";" + $WINNAME + ";" + $drive + ";" + $office + ";" + $TopsisDate + ";" + $TopsisTime + @CRLF )
+		
+		ENDIF
+		Close (3)
+		$BIOSMA = ""
+		$BIOSSN = ""
+	; Nächstes *.topsis File
+	$TopsisFile = Dir ()
+Loop
+
